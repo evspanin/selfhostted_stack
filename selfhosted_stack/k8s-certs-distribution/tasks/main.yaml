@@ -1,0 +1,31 @@
+---
+- name: Create directories for certificates
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop: "{{ cert_paths }}"
+
+- name: Copy certificate to containerd certs directory
+  ansible.builtin.copy:
+    src: certificate.crt
+    dest: "/etc/containerd/certs/{{ registry_url }}/ca.crt"
+    mode: 0644
+    remote_src: false
+
+- name: Copy certificate to system certs directory
+  ansible.builtin.copy:
+    src: certificate.crt
+    dest: "/usr/local/share/ca-certificates/registry_ca.crt"
+    mode: 0644
+    remote_src: false
+
+- name: Update CA Certificates
+  ansible.builtin.command: update-ca-certificates
+  become: yes
+
+- name: Restart containerd service
+  ansible.builtin.service:
+    name: containerd
+    state: restarted
+  become: yes

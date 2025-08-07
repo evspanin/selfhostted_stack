@@ -1,0 +1,14 @@
+[master]
+k8s-master ansible_host=10.180.60.2
+
+[workers]
+k8s-worker01 ansible_host=10.180.60.3
+k8s-worker02 ansible_host=10.180.60.4
+k8s-worker03 ansible_host=10.180.60.5
+
+[k8s:children]
+master
+workers
+
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

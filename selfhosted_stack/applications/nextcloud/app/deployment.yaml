@@ -1,0 +1,188 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nextcloud-sa
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud
+  annotations:
+    description: "Service account for Nextcloud pods"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud
+  annotations:
+    checksum/config: ""
+    description: "Nextcloud deployment"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud
+      
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nextcloud
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      initContainers: []
+      serviceAccount: nextcloud-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: nextcloud
+        image: 192.168.1.240:5000/nextcloud:ssl-apache
+        ports:
+        - name: https
+          containerPort: 443
+          protocol: TCP
+        env:
+        - name: POSTGRES_HOST
+          value: "nextcloud-postgres"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              key: postgres-db
+              name: postgres-secrets
+              namespace: postgres-ns
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: postgres-user
+              name: postgres-secrets
+              namespace: postgres-ns
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgres-password
+              name: postgres-secrets
+              namespace: postgres-ns
+        - name: NEXTCLOUD_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: nextcloud-user
+              name: nextcloud-secrets
+              namespace: nextcloud
+        - name: NEXTCLOUD_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: nextcloud-password
+              name: nextcloud-secrets
+              namespace: nextcloud
+        - name: NEXTCLOUD_TRUSTED_DOMAINS
+          value: kubecommun.crazedns.ru
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+        - name: nextcloud-config
+          mountPath: /etc/apache2/sites-available/000-default.conf
+          subPath: 000-default.conf
+        - name: nextcloud-config
+          mountPath: /etc/apache2/apache2.conf
+          subPath: apache2.conf
+        - name: nextcloud-main
+          mountPath: /var/www/
+          subPath: root
+        - name: nextcloud-main
+          mountPath: /var/www/html
+          subPath: html
+        - name: nextcloud-data
+          mountPath: /var/www/html/data
+          subPath: data
+        - name: nextcloud-main
+          mountPath: /var/www/html/config
+        - name: nextcloud-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
+        - name: nextcloud-main
+          mountPath: /var/www/tmp
+          subPath: tmp
+        - name: nextcloud-main
+          mountPath: /var/www/html/themes
+          subPath: themes
+        livenessProbe:
+          {}
+        readinessProbe:
+          {}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - nextcloud
+              weight: 100
+      tolerations: []
+      nodeSelector: {}
+      volumes:
+      - name: nextcloud-data
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc
+      - name: certs
+        secret:
+          secretName: nextcloud-tls
+      - name: nextcloud-config
+        configMap:
+          name: nextcloud-config
+          items:
+            - key: 000-default.conf
+              path: 000-default.conf
+            - key: apache2.conf
+              path: apache2.conf
+      - name: nextcloud-main
+        emptyDir: {}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nextcloud-hpa
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: nextcloud
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nextcloud
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50

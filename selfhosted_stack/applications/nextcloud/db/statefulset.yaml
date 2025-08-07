@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: nextcloud
+  labels:
+    app.kubernetes.io/name: postgres
+  annotations:
+    checksum/config: ""
+    description: "Postgresql database StatefulSet"
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      initContainers: []
+      serviceAccount: postgres-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: postgres
+        image: 192.168.1.240:5000/postgresql:17.5.0
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              key: postgres-db
+              name: nextcloud-secrets
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: postgres-user
+              name: nextcloud-secrets
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgres-password
+              name: nextcloud-secrets
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        securityContext:
+          capabilities:
+            drop: ["ALL"]
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /var/lib/postgres/data
+          name: postgres-data
+        livenessProbe:
+          {}
+        readinessProbe:
+          {}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - postgres
+              weight: 100
+      tolerations: []
+      nodeSelector: {}
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc

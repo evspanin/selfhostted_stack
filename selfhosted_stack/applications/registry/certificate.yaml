@@ -1,0 +1,26 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-cert
+  namespace: registry-space
+spec:
+  privateKey:
+    rotationPolicy: Always
+  secretName: registry-tls
+  duration: 2160h
+  renewBefore: 360h
+  isCA: false
+  usages:
+  - server auth
+  - client auth
+  subject:
+    organizations:
+    - cert-manager
+  commonName: kubecommun.crazedns.ru
+  dnsNames:
+  - kubecommun.crazedns.ru
+  ipAddresses:
+  - 192.168.1.240
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer

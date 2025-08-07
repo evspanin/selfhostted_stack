@@ -1,0 +1,87 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-rbd-harbor
+  namespace: csi-plugin
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: 425124f1-3b5d-488f-88aa-c61b87232d14
+  pool: harbor_pool
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: harbor-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-plugin
+  csi.storage.k8s.io/controller-expand-secret-name: harbor-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: csi-plugin
+  csi.storage.k8s.io/node-stage-secret-name: harbor-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-plugin
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+   - discard
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-rbd-nextcloud
+  namespace: csi-plugin
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: 425124f1-3b5d-488f-88aa-c61b87232d14
+  pool: nextcloud_pool
+  imageFeatures: layering
+  csi.storage.k8s.io/provisioner-secret-name: nextcloud-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-plugin
+  csi.storage.k8s.io/controller-expand-secret-name: nextcloud-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: csi-plugin
+  csi.storage.k8s.io/node-stage-secret-name: nextcloud-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-plugin
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+mountOptions:
+   - discard
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-rbd-postgresql
+  namespace: csi-plugin
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: 425124f1-3b5d-488f-88aa-c61b87232d14
+  pool: postgresql_pool
+  imageFeatures: layering,exclusive-lock
+  csi.storage.k8s.io/provisioner-secret-name: postgresql-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-plugin
+  csi.storage.k8s.io/controller-expand-secret-name: postgresql-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: csi-plugin
+  csi.storage.k8s.io/node-stage-secret-name: postgresql-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-plugin
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+   - discard
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-rbd-vault
+  namespace: csi-plugin
+provisioner: rbd.csi.ceph.com
+parameters:
+  clusterID: 425124f1-3b5d-488f-88aa-c61b87232d14
+  pool: vault_pool
+  imageFeatures: layering,exclusive-lock
+  encrypted: "false"
+  csi.storage.k8s.io/provisioner-secret-name: vault-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-plugin
+  csi.storage.k8s.io/controller-expand-secret-name: vault-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: csi-plugin
+  csi.storage.k8s.io/node-stage-secret-name: vault-secret
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-plugin
+#  csi.storage.k8s.io/encryption-secret-name: csi-rbd-encryption-secret
+#  csi.storage.k8s.io/encryption-secret-namespace: csi-plugin
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+   - discard

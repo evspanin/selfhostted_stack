@@ -1,0 +1,6 @@
+---
+- name: Distribute certificates to Kubernetes nodes
+  hosts: k8s
+  become: yes
+  gather_facts: yes
+  tasks: "{{ lookup('file', 'tasks/main.yml') | from_yaml }}"

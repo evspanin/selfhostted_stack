@@ -1,0 +1,8 @@
+{
+    "ansible.python.interpreterPath": "/usr/bin/python3",
+    "yaml.schemas": {
+        "kubernetes": "*.yaml",
+        "file:///home/linadmin/.vscode-server/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i",
+        "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/playbook": "file:///opt/selfhosted_stack/k8s-certs-distribution/tasks/main.yaml"
+    }
+}
